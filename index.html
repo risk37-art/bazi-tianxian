@@ -40,6 +40,8 @@
   .bar{flex:1;height:9px;background:rgba(255,255,255,.07);border-radius:6px;overflow:hidden}
   .bar i{display:block;height:100%;background:linear-gradient(90deg,#8a6d3b,#e8c979)}
   .disc{font-size:11px;color:var(--mut);line-height:1.7;border-top:1px dashed var(--bd);margin-top:14px;padding-top:12px}
+  .sum{background:rgba(232,201,121,.07);border:1px solid var(--bd);border-radius:12px;padding:12px 14px;margin:4px 0 2px}
+  .sum .line{margin:6px 0}
   .share{font-size:11px;color:var(--mut);text-align:center;margin-top:18px}
 </style>
 </head>
@@ -50,15 +52,16 @@
 
   <div class="card">
     <div class="grid">
-      <div class="col"><label>年</label><input id="y" type="number" inputmode="numeric" value="1990" min="1900" max="2030"></div>
-      <div class="col"><label>月</label><input id="mo" type="number" inputmode="numeric" value="1" min="1" max="12"></div>
-      <div class="col"><label>日</label><input id="d" type="number" inputmode="numeric" value="1" min="1" max="31"></div>
+      <div class="col"><label>年</label><input id="y" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" value="1990" placeholder="如1990"></div>
+      <div class="col"><label>月</label><input id="mo" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" value="1" placeholder="1-12"></div>
+      <div class="col"><label>日</label><input id="d" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" value="1" placeholder="1-31"></div>
     </div>
     <div class="grid" style="margin-top:8px">
-      <div class="col"><label>时(0-23)</label><input id="h" type="number" inputmode="numeric" value="0" min="0" max="23"></div>
-      <div class="col"><label>分</label><input id="mi" type="number" inputmode="numeric" value="0" min="0" max="59"></div>
-      <div class="col"><label>出生地</label>
-        <select id="city"></select>
+      <div class="col"><label>时(0-23)</label><input id="h" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" value="0" placeholder="0-23"></div>
+      <div class="col"><label>分</label><input id="mi" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" value="0" placeholder="0-59"></div>
+      <div class="col" style="flex:2.2"><label>出生地（省 / 市）</label>
+        <select id="prov"></select>
+        <select id="city" style="margin-top:6px"></select>
       </div>
     </div>
     <button class="btn" id="go">查先天倾向</button>
@@ -8714,15 +8717,20 @@ function calcOne(y,mo,d,h,mi,lng){
 // 五行 → 脏腑系统（《素问·金匮真言论》心火/肝木/脾土/肺金/肾水；"五藏"为功能性子系统）
 const WU_ORGAN = {
   金:{zang:'肺',fu:'大肠',sys:'呼吸与免疫防御系统',qiao:'鼻',ti:'皮毛',zhi:'悲/忧',
-      tairuo:'肺气壅滞、宣降失调——易见鼻塞痰多、呼吸道敏感、皮肤不稳、换季易感冒；肺与大肠相表里，湿浊下注易便溏黏腻'},
+      tairuo:'肺气壅滞、宣降失调——易见鼻塞痰多、呼吸道敏感、皮肤不稳、换季易感冒；肺与大肠相表里，湿浊下注易便溏黏腻',
+      buji:'肺气不足、卫外不固——易见易感冒、气短懒言、皮肤干敏、大肠传导无力（便秘或脱肛倾向）'},
   木:{zang:'肝',fu:'胆',sys:'神经—疏泄调节系统',qiao:'目',ti:'筋',zhi:'怒',
-      tairuo:'肝失疏泄、气机郁结——易见情绪抑郁或急躁、两胁胀闷、消化受抑、女性经期不舒'},
+      tairuo:'肝失疏泄、气机郁结——易见情绪抑郁或急躁、两胁胀闷、消化受抑、女性经期不舒',
+      buji:'肝血不足、疏泄无力——易见眼干涩、筋软乏力、情绪低沉、胆气不宁'},
   火:{zang:'心',fu:'小肠',sys:'循环与神志系统',qiao:'舌',ti:'血脉',zhi:'喜',
-      tairuo:'心火偏亢或心阴不足——易见心烦失眠、口舌生疮、血压波动、心神不宁'},
+      tairuo:'心火偏亢或心阴不足——易见心烦失眠、口舌生疮、血压波动、心神不宁',
+      buji:'心气心血不足——易见心悸气短、面色苍白、精神不振、手足不温'},
   水:{zang:'肾',fu:'膀胱',sys:'泌尿/生殖/内分泌系统',qiao:'耳',ti:'骨',zhi:'恐',
-      tairuo:'肾水不足或气化失司——易见畏寒腰酸、精力不济、生殖泌尿易感、耳鸣'},
+      tairuo:'肾水不足或气化失司——易见畏寒腰酸、精力不济、生殖泌尿易感、耳鸣',
+      buji:'肾精肾气不足——易见畏寒肢冷、腰膝酸软、精力不济、生殖泌尿偏弱'},
   土:{zang:'脾',fu:'胃',sys:'消化与运化系统',qiao:'口',ti:'肌肉',zhi:'思',
-      tairuo:'脾土壅滞或虚弱——易见腹胀、大便黏腻或不成形、身体发沉、食欲异常、思虑过重'}
+      tairuo:'脾土壅滞或虚弱——易见腹胀、大便黏腻或不成形、身体发沉、食欲异常、思虑过重',
+      buji:'脾胃虚弱、运化无力——易见食少腹胀、大便溏薄、肌肉松弛、思虑难解'}
 };
 // 喜用神 → 调理方向（与命理"克泄耗过旺/生扶弱"同构：木破土、火暖局、水泄秀）
 const WU_TIAO = {
@@ -8755,16 +8763,20 @@ function tianxianTendency(a){
   };
 }
 
-const API={trueSolar,getBazi,analyze,calcOne,tianxianTendency,WU_ORGAN,WU_TIAO,CITY_LNG};
+const API={trueSolar,getBazi,analyze,calcOne,tianxianTendency,WU_ORGAN,WU_TIAO,CITY_LNG,REGION};
 if(typeof module!=='undefined' && module.exports){ module.exports=API; }
 else if(typeof window!=='undefined'){ window.TXCore=API; }
 
 </script>
 <script>
-const CITIES=["北京","上海","广州","深圳","成都","重庆","杭州","南京","武汉","西安","天津","苏州","长沙","郑州","沈阳","青岛","大连","厦门","昆明","贵阳","哈尔滨","济南","福州","南昌","合肥","南宁","兰州","太原","石家庄","乌鲁木齐","拉萨","中国香港","中国台湾","中国澳门"];
-const sel=document.getElementById('city');
-CITIES.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o);});
-sel.value="成都";
+const PROV=document.getElementById('prov'), CITY=document.getElementById('city');
+function fillCity(p){
+  CITY.innerHTML='';
+  Object.keys(TXCore.REGION[p]).forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;CITY.appendChild(o);});
+}
+Object.keys(TXCore.REGION).forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;PROV.appendChild(o);});
+PROV.addEventListener('change',e=>fillCity(e.target.value));
+PROV.value="四川"; fillCity("四川"); CITY.value="成都";
 
 function start(){
   document.getElementById('error').textContent='';
@@ -8790,6 +8802,10 @@ function render(r){
   const a=r.a, t=TXCore.tianxianTendency(a);
   const state=a.strong?'身旺 · 能量有余':(a.balanced?'中和 · 相对均衡':'身弱 · 能量不足');
   const o=t.organ;
+  // 本脏系统先天倾向：由日主强弱推导本脏偏实/偏虚
+  const tendKey=a.strong?'strong':(a.balanced?'balanced':'weak');
+  const tendWord=tendKey==='strong'?'实证·壅滞（能量有余，易堵）':(tendKey==='weak'?'虚证·不足（能量偏亏，易虚损）':'平和（无明显太过/不及）');
+  const tendDesc=tendKey==='strong'?o.tairuo:(tendKey==='weak'?o.buji:'本脏系统相对均衡，无显著太过或不及。');
   // 偏性
   let bias='';
   if(t.over){
@@ -8803,20 +8819,34 @@ function render(r){
   if(!bias) bias='<div class="line">五行分布相对均衡，无显著太过 / 不及。</div>';
   const tiao=t.tiao.map(x=>`<div class="line">· <b>${x.e}系</b>：${x.dir}</div>`).join('');
   const dist=Object.keys(a.perWu).map(w=>barRow(w,a.perWu[w])).join('');
+  // 整体总结
+  const focus=[`本脏 <b>${o.zang}/${o.fu}</b> 先天偏「${tendWord}」`];
+  if(t.over){ const ov=TXCore.WU_ORGAN[t.over]; focus.push(`<b>${ov.zang}/${ov.fu}</b> 因 ${t.over}行偏旺而易壅滞`); }
+  if(t.weak){ const wv=TXCore.WU_ORGAN[t.weak]; focus.push(`<b>${wv.zang}/${wv.fu}</b> 因 ${t.weak}行偏弱而易虚损`); }
+  const focusTxt=focus.join('；');
+  const tiaoAll=a.xi.map(e=>e+'·'+TXCore.WU_TIAO[e].dir).join('；');
   const html=`
     <div class="card">
       <div class="bazi">${r.bz.year} ${r.bz.month} ${r.bz.day} ${r.bz.hour}</div>
       <div class="tagline">日主属 <b>${t.dayanWu}</b> · ${state} · 喜用 ${a.xi.join('、')}</div>
-      <div class="sect">本脏系统</div>
+      <div class="sect">本脏系统（你的先天主场）</div>
       <div class="line">日主属 <b>${t.dayanWu}</b> → 本脏 <b>${o.zang} / ${o.fu}</b>（${o.sys}）；开窍于${o.qiao}、主${o.ti}、在志为${o.zhi}。</div>
+      <div class="line">本脏先天倾向：日主<b>${t.dayanWu}</b>${state}，故 <b>${o.zang}/${o.fu}</b> 系统先天偏「<b>${tendWord}</b>」——${tendDesc}</div>
       <div class="sect">能量基调</div>
       <div class="line">${t.baseDesc}</div>
       <div class="sect">五行偏性 → 脏腑倾向</div>
+      <div class="line" style="font-size:12px;color:var(--mut)">五行偏性＝全局五行盈缺；脏腑倾向＝偏性落在哪些脏腑。本脏系统是你日主的主场脏腑——偏性可能落在它身上，也可能落在别的脏腑。</div>
       ${bias}
       <div class="sect">五行分布</div>
       ${dist}
       <div class="sect">喜用神 → 调理方向</div>
       ${tiao}
+      <div class="sect">整体先天倾向总结</div>
+      <div class="sum">
+        <div class="line"><b>整体基调：</b>日主属 <b>${t.dayanWu}</b>，本脏 <b>${o.zang}/${o.fu}</b>，${state}。</div>
+        <div class="line"><b>重点脏腑：</b>${focusTxt}。</div>
+        <div class="line"><b>调理总方向：</b>喜用 ${a.xi.join('、')} —— ${tiaoAll}。</div>
+      </div>
       <div class="disc">说明：本工具基于传统命理扶抑法与中医藏象学说（《素问·金匮真言论》五行—脏腑配属、《素问·五运行大论》太过/不及、GB/T 46939—2025 中医体质分类），输出的是<b>先天倾向性参考</b>，不是疾病诊断，亦不能替代执业医师。身体不适请及时就医。</div>
     </div>`;
   const res=document.getElementById('res');
